@@ -15,11 +15,8 @@
       text-align: center;
     }
 
-    h1 {
-      margin-top: 25px;
-    }
+    h1 { margin-top: 25px; }
 
-    /* 🚀 BOTÓN */
     .btn {
       background: linear-gradient(135deg, #00c6ff, #0072ff);
       color: white;
@@ -29,44 +26,15 @@
       border-radius: 30px;
       cursor: pointer;
       margin: 20px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-      transition: all 0.3s ease;
       font-weight: bold;
     }
 
-    .btn:hover {
-      transform: scale(1.1);
-    }
+    .btn:disabled { opacity: 0.6; }
 
-    .btn:active {
-      transform: scale(0.95);
-    }
-
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
-
-    /* 📊 ESTADÍSTICAS */
-    #stats {
-      margin: 10px;
-      font-size: 16px;
-      opacity: 0.9;
-    }
-
-    #status {
-      margin-top: 10px;
-      opacity: 0.8;
-    }
-
-    /* 📋 TABLA */
     table {
       margin: auto;
       width: 85%;
       border-collapse: collapse;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
     }
 
     th, td {
@@ -74,25 +42,11 @@
       border-bottom: 1px solid rgba(255,255,255,0.1);
     }
 
-    th {
-      background: #1f2a44;
-      letter-spacing: 1px;
-    }
+    th { background: #1f2a44; }
 
-    tr:hover {
-      background: rgba(255,255,255,0.05);
-    }
+    .danger { background: rgba(255, 50, 50, 0.15); }
+    .safe { background: rgba(50, 255, 120, 0.08); }
 
-    /* 🚦 COLORES */
-    .danger {
-      background: rgba(255, 50, 50, 0.15);
-    }
-
-    .safe {
-      background: rgba(50, 255, 120, 0.08);
-    }
-
-    /* 🌍 MAPA */
     #map {
       height: 350px;
       width: 85%;
@@ -125,7 +79,6 @@
   <tbody id="data"></tbody>
 </table>
 
-<!-- 🌍 MAPA -->
 <div id="map"></div>
 
 <script>
@@ -133,78 +86,76 @@
 let map = L.map('map').setView([20, 0], 2);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-  attribution: '&copy; OpenStreetMap contributors'
+  attribution: '&copy; OpenStreetMap'
 }).addTo(map);
 
 let markers = [];
 
 async function loadAsteroids() {
+
   const btn = document.getElementById("btn");
   const status = document.getElementById("status");
   const stats = document.getElementById("stats");
+  const table = document.getElementById("data");
 
   btn.disabled = true;
-  btn.innerText = "⏳ Cargando...";
   status.innerText = "Conectando con NASA... 🌌";
 
-try {
-  const url =
-    "https://api.nasa.gov/neo/rest/v1/feed" +
-    "?start_date=2026-04-15" +
-    "&end_date=2026-04-17" +
-    "&api_key=TU_API_KEY";
+  try {
 
-  const res = await fetch(url);
-  const json = await res.json();
+    const url =
+      "https://api.nasa.gov/neo/rest/v1/feed" +
+      "?start_date=2024-04-10" +
+      "&end_date=2024-04-12" +
+      "&api_key=DEMO_KEY";
 
-  const asteroides = Object.values(json.near_earth_objects).flat();
+    const res = await fetch(url);
+    const json = await res.json();
 
-  asteroides.sort((a, b) =>
-    a.close_approach_data[0].miss_distance.kilometers -
-    b.close_approach_data[0].miss_distance.kilometers
-  );
+    const asteroides = Object.values(json.near_earth_objects).flat();
 
-  const table = document.getElementById("data");
-  table.innerHTML = "";
+    asteroides.sort((a, b) =>
+      a.close_approach_data[0].miss_distance.kilometers -
+      b.close_approach_data[0].miss_distance.kilometers
+    );
 
-  let dangerous = 0;
-  let safe = 0;
+    table.innerHTML = "";
 
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
+    let dangerous = 0;
+    let safe = 0;
 
- asteroides.forEach(a => {
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
 
-  const hazardous = a.is_potentially_hazardous_asteroid;
+    asteroides.forEach(a => {
 
-  if (hazardous) dangerous++;
-  else safe++;
+      const speed = a.close_approach_data[0].relative_velocity.kilometers_per_hour;
+      const distance = a.close_approach_data[0].miss_distance.kilometers;
+      const hazardous = a.is_potentially_hazardous_asteroid;
 
-  const rowClass = hazardous ? "danger" : "safe";
+      if (hazardous) dangerous++;
+      else safe++;
 
-      // 📋 tabla
+      const rowClass = hazardous ? "danger" : "safe";
+
       table.innerHTML += `
         <tr class="${rowClass}">
-          <td>${a.name}</td>
-          <td>${Number(a.speed_kmh).toLocaleString()} km/h</td>
-          <td>${Number(a.distance_km).toLocaleString()} km</td>
-          <td>${a.hazardous ? "☠️ Sí" : "🟢 No"}</td>
+          <td>☄️ ${a.name}</td>
+          <td>${Number(speed).toLocaleString()} km/h</td>
+          <td>${Number(distance).toLocaleString()} km</td>
+          <td>${hazardous ? "☠️ Sí" : "🟢 No"}</td>
         </tr>
       `;
 
-      // 🌍 mapa (posición simulada)
       const lat = Math.random() * 140 - 70;
       const lng = Math.random() * 360 - 180;
 
       const marker = L.circleMarker([lat, lng], {
-        radius: a.hazardous ? 10 : 6,
-        color: a.hazardous ? "red" : "lime"
+        radius: hazardous ? 10 : 6,
+        color: hazardous ? "red" : "lime"
       }).addTo(map);
 
-      marker.bindPopup(`
-        <b>${a.name}</b><br>
-        ${a.hazardous ? "☠️ PELIGROSO" : "🟢 seguro"}
-      `);
+      marker.bindPopup(`<b>${a.name}</b>`);
 
       markers.push(marker);
     });
@@ -212,7 +163,7 @@ try {
     stats.innerHTML = `
       ☠️ Peligrosos: ${dangerous} |
       🟢 Seguros: ${safe} |
-      🌌 Total: ${data.length}
+      🌌 Total: ${asteroides.length}
     `;
 
     status.innerText = "Datos cargados correctamente ✨";
