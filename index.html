@@ -103,21 +103,24 @@ async function loadAsteroids() {
 
   try {
 
-    const url =
-"https://api.allorigins.win/raw?url=" +
-encodeURIComponent("https://api.nasa.gov/neo/rest/v1/feed?start_date=2024-04-10&end_date=2024-04-12&api_key=IoadGEecOXg1qQ4QgGsJndWSIAIfQg42rRjfjaPe");
+    // ✅ URL corregida (sin proxy + DEMO_KEY)
+    const url = "https://api.nasa.gov/neo/rest/v1/feed?start_date=2024-04-10&end_date=2024-04-12&api_key=DEMO_KEY";
 
- 
-const res = await fetch(url);
-const json = await res.json();
+    const res = await fetch(url);
+    const json = await res.json();
 
-const asteroides = Object.values(json.near_earth_objects).flat();
+    console.log(json); // ✅ debug
 
+    if (!json.near_earth_objects) {
+      throw new Error("Respuesta inválida de NASA");
+    }
 
+    const asteroides = Object.values(json.near_earth_objects).flat();
 
+    // ✅ sort corregido (con Number)
     asteroides.sort((a, b) =>
-      a.close_approach_data[0].miss_distance.kilometers -
-      b.close_approach_data[0].miss_distance.kilometers
+      Number(a.close_approach_data[0].miss_distance.kilometers) -
+      Number(b.close_approach_data[0].miss_distance.kilometers)
     );
 
     table.innerHTML = "";
@@ -170,7 +173,7 @@ const asteroides = Object.values(json.near_earth_objects).flat();
     status.innerText = "Datos cargados correctamente ✨";
 
   } catch (err) {
-    console.log(err);
+    console.error(err);
     status.innerText = "Error conectando con NASA ❌";
   }
 
